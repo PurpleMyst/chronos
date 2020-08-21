@@ -10,6 +10,9 @@ import structlog  # type: ignore
 import HumanTime as human_time  # type: ignore
 
 
+COMMAND_PREFIX = "c!"
+
+
 def utc(offset: int) -> timezone:
     return timezone(timedelta(hours=offset))
 
@@ -220,14 +223,14 @@ class Bot:
     }
 
     async def on_message(self, message: discord.Message) -> None:
-        if not message.content.startswith("!"):
+        if not message.content.startswith(COMMAND_PREFIX):
             return
 
         logger = structlog.get_logger().bind(
             member_id=message.author.id, member_name=message.author.name
         )
 
-        command = message.content.split(" ", 1)[0][1:]
+        command = message.content.split(" ", 1)[0][len(COMMAND_PREFIX) :]
         logger.debug("command.requested", command=command)
         if command not in self.__class__.COMMANDS:
             logger.debug("command.notfound", command=command)
