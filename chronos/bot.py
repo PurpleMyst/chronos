@@ -1,13 +1,13 @@
 import typing as t
 from datetime import datetime, timezone, timedelta
 import pickle
+import os
 from base64 import b64encode, b64decode
+from functools import cached_property
 
 import discord  # type: ignore
 import structlog  # type: ignore
 import HumanTime as human_time  # type: ignore
-
-from . import secretdata
 
 
 def utc(offset: int) -> timezone:
@@ -26,9 +26,12 @@ class Bot:
         self.storage_msg: t.Optional[discord.Message] = None
         self.parties: t.Dict[str, t.Dict[int, int]] = {}
 
+    @cached_property
     def _storage_channel(self) -> discord.TextChannel:
-        guild: discord.Guild = by_id(secretdata.GUILD, self.client.guilds)
-        return by_id(secretdata.STORAGE_CHANNEL, guild.text_channels)
+        guild: discord.Guild = by_id(
+            int(os.environ["STORAGE_GUILD"]), self.client.guilds
+        )
+        return by_id(int(os.environ["STORAGE_CHANNEL"]), guild.text_channels)
 
     async def _find_storage_message(self) -> bool:
         "Look for the storage message and return if it was found"
@@ -36,7 +39,7 @@ class Bot:
             return True
 
         # Search for the storage message in its channel's history
-        async for msg in self._storage_channel().history():
+        async for msg in self._storage_channel.history():
             if msg.author == self.client.user:
                 self.storage_msg = msg
                 return True
@@ -54,14 +57,14 @@ class Bot:
 
         # If there's no storage message to be found, create it
         if not (await self._find_storage_message()):
-            self.storage_msg = await self._storage_channel().send(content)
+            self.storage_msg = await self._storage_channel.send(content)
             return
 
         assert self.storage_msg is not None
         await self.storage_msg.edit(content=content)
 
     async def on_ready(self) -> None:
-        logger = structlog.get_logger()
+        logger = structlog.get_logger().bind()
         await self.load_parties()
         logger.info("ready", parties=self.parties)
 
