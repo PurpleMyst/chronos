@@ -173,7 +173,7 @@ class Bot:
         "List the known parties"
 
         embed = discord.Embed(
-            title="Parties", color=discord.Color.from_rgb(0x2A, 0x17, 0x42)
+            title="Parties", color=discord.Color.from_rgb(0x91, 0xD1, 0x8B)
         )
 
         for partyname, party in self.parties.items():
@@ -191,7 +191,7 @@ class Bot:
         "Show the installed commands"
 
         embed = discord.Embed(
-            title="Parties", color=discord.Color.from_rgb(0x2A, 0x17, 0x42)
+            title="Commands", color=discord.Color.from_rgb(0xE1, 0x1D, 0x74)
         )
 
         for command, func in self.COMMANDS.items():
