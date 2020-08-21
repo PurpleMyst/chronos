@@ -285,13 +285,18 @@ class Bot:
             logger.error("hof.notfound")
             return
 
-        await hof_channel.send(
-            embed=discord.Embed(
-                url=message.jump_url, description=message.content
-            )
+        embed = (
+            discord.Embed(url=message.jump_url, description=message.content)
             .set_author(name=author.name, icon_url=str(author.avatar_url))
             .set_footer(text=message.jump_url)
         )
+
+        for embed in message.embeds:
+            if embed.image is not discord.Embed.Empty:
+                embed.set_image(embed.image.url)
+                break
+
+        await hof_channel.send(embed=embed)
 
     COMMANDS = {
         "createparty": createparty,
