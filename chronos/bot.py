@@ -177,7 +177,7 @@ class Bot:
                 ),
             )
 
-        message.channel.send(embed=embed)
+        await message.channel.send(embed=embed)
 
     COMMANDS = {
         "createparty": createparty,
