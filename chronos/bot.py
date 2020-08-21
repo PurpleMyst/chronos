@@ -211,7 +211,9 @@ class Bot:
         "List the known parties"
 
         embed = discord.Embed(
-            title="Parties", color=discord.Color.from_rgb(0x91, 0xD1, 0x8B)
+            title="Parties",
+            description=f"{len(self.parties)} found",
+            color=discord.Color.from_rgb(0x91, 0xD1, 0x8B),
         )
 
         for partyname, party in self.parties.items():
