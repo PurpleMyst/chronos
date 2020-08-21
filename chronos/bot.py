@@ -141,14 +141,15 @@ class Bot:
         )
 
         parts = message.content.split()
-        if len(parts) != 3:
+        if len(parts) != 3 or len(parts) != 4:
             await message.channel.send(
                 f"<@{message.author.id}>: "
-                "USAGE: !addtimezone PARTY_NAME UTC_OFFSET"
+                "USAGE: !addtimezone PARTY_NAME UTC_OFFSET [MEMBER_ID]"
             )
             return
 
-        _, partyname, offset = parts
+        partyname = parts[1]
+        offset = parts[2]
 
         if partyname not in self.parties:
             await message.channel.send(
@@ -156,23 +157,24 @@ class Bot:
             )
             return
 
+        id_ = parts[3] if len(parts) == 4 else message.author.id
+        logger = logger.bind(party_member_id=id_)
+
         for partyname, party in self.parties.items():
-            if message.author.id in party:
-                del party[message.author.id]
+            if id_ in party:
+                del party[id_]
                 logger.info(
                     "party.removed", party=partyname, parties=self.parties
                 )
 
         try:
-            self.parties[partyname][message.author.id] = int(offset)
+            self.parties[partyname][id_] = int(offset)
         except ValueError:
             await message.channel.send(
                 f"<@{message.author.id}>: Invalid offset {offset}"
             )
         else:
-            await message.channel.send(
-                f"Added <@{message.author.id}> to **{partyname}**"
-            )
+            await message.channel.send(f"Added <@{id_}> to **{partyname}**")
             logger.info(
                 "party.added",
                 party=partyname,
