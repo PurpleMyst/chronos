@@ -190,10 +190,20 @@ class Bot:
         if not message.content.startswith("!"):
             return
 
+        logger = structlog.get_logger().bind(
+            member_id=message.author.id, member_name=message.author.name
+        )
+
         command = message.content.split(" ", 1)[0][1:]
+        logger.debug("command.requested", command=command)
         if command not in self.__class__.COMMANDS:
+            logger.debug("command.notfound", command=command)
             return
         meth = self.__class__.COMMANDS[command]
 
-        await meth(self, message)
+        try:
+            await meth(self, message)
+        except Exception as e:
+            logger.error("error", error=e)
+
         await self.store_parties()
