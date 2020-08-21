@@ -64,7 +64,7 @@ class Bot:
             logger.debug("load.no_storage", parties=self.parties)
 
     async def store_parties(self) -> None:
-        logger = structlog.get_logger.bind()
+        logger = structlog.get_logger().bind()
 
         content = b64encode(pickle.dumps(self.parties)).decode("ascii")
         logger.debug("store.content", content=content)
