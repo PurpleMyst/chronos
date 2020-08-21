@@ -102,7 +102,7 @@ class Bot:
             return
 
         for partyname, party in self.parties.items():
-            if message.author.id in party.items():
+            if message.author.id in party:
                 del party[message.author.id]
                 logger.info(
                     "party.removed", party=partyname, parties=self.parties
