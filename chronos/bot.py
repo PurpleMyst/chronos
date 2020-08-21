@@ -69,6 +69,8 @@ class Bot:
         logger.info("ready", parties=self.parties)
 
     async def createparty(self, message: discord.Message) -> None:
+        "Create a new party"
+
         logger = structlog.get_logger().bind(
             member_id=message.author.id, member_name=message.author.name
         )
@@ -81,6 +83,8 @@ class Bot:
         )
 
     async def addtimezone(self, message: discord.Message) -> None:
+        "Add yourself to a party, with your UTC offset"
+
         logger = structlog.get_logger().bind(
             member_id=message.author.id, member_name=message.author.name
         )
@@ -126,6 +130,8 @@ class Bot:
             )
 
     async def convert(self, message: discord.Message) -> None:
+        "Convert a given timestamp to your party's timezones"
+
         logger = structlog.get_logger().bind(
             member_id=message.author.id, member_name=message.author.name
         )
@@ -164,6 +170,8 @@ class Bot:
         )
 
     async def list_parties(self, message: discord.Message) -> None:
+        "List the known parties"
+
         embed = discord.Embed(
             title="Parties", color=discord.Color.from_rgb(0x2A, 0x17, 0x42)
         )
@@ -179,11 +187,26 @@ class Bot:
 
         await message.channel.send(embed=embed)
 
+    async def show_help(self, message: discord.Message) -> None:
+        "Show the installed commands"
+
+        embed = discord.Embed(
+            title="Parties", color=discord.Color.from_rgb(0x2A, 0x17, 0x42)
+        )
+
+        for command, func in self.COMMANDS.items():
+            embed.add_field(
+                name=f"!{command}", value=func.__doc__ or "No help given."
+            )
+
+        await message.channel.send(embed=embed)
+
     COMMANDS = {
         "createparty": createparty,
         "parties": list_parties,
         "addtimezone": addtimezone,
         "convert": convert,
+        "help": show_help,
     }
 
     async def on_message(self, message: discord.Message) -> None:
