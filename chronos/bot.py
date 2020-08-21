@@ -243,11 +243,63 @@ class Bot:
 
         await message.channel.send(f"<@{message.author.id}>", embed=embed)
 
+    async def manual_hof(self, message: discord.Message) -> None:
+        "Manually add a message to the HOF"
+
+        parts = message.content.split()
+        if len(parts) != 2:
+            await message.channel.send(
+                f"<@{message.author.id}>: USAGE: !hof MESSAGE_ID"
+            )
+            return
+
+        try:
+            message_id = int(parts[1])
+        except ValueError:
+            await message.channel.send(
+                f"<@{message.author.id}>: USAGE: !hof MESSAGE_ID"
+            )
+            return
+
+        try:
+            message = message.channel.fetch_message(message_id)
+        except discord.NotFound:
+            await message.channel.send(
+                f"<@{message.author.id}>: Message not found."
+            )
+            return
+
+        await self.add_to_hof(message)
+
+    async def add_to_hof(self, message: discord.Message) -> None:
+        author = message.author
+
+        logger = structlog.get_logger().bind(
+            message=message.id, author=message.author.id
+        )
+        logger.info("hof.add")
+
+        hof_channel = self.client.get_channel(int(os.environ["HOF_CHANNEL"]))
+        if hof_channel is None:
+            logger.error("hof.notfound")
+            return
+
+        title = author.name
+        description = message.content
+        thumb_url = str(author.avatar_url_as(size=64))
+
+        await hof_channel.send(
+            embed=discord.Embed(title=title, description=description)
+            .set_thumbnail(url=thumb_url)
+            .set_footer(message.jump_url)
+        )
+
     COMMANDS = {
         "createparty": createparty,
         "deleteparty": deleteparty,
         "parties": list_parties,
         "addtimezone": addtimezone,
+        "hof": manual_hof,
         "convert": convert,
         "help": show_help,
     }
@@ -277,7 +329,7 @@ class Bot:
     async def on_reaction_add(
         self,
         reaction: discord.Reaction,
-        user: t.Union[discord.User, discord.Member],
+        _user: t.Union[discord.User, discord.Member],
     ) -> None:
         if (
             getattr(reaction.emoji, "name", reaction.emoji) != "nat20"
@@ -285,26 +337,5 @@ class Bot:
         ):
             return
 
-        message = reaction.message
-        author = message.author
-
-        logger = structlog.get_logger().bind(
-            message=message.id, author=author.id
-        )
-        logger.info("hof.add")
-
-        hof_channel = self.client.get_channel(int(os.environ["HOF_CHANNEL"]))
-        if hof_channel is None:
-            logger.error("hof.notfound")
-            return
-
-        title = author.name
-        description = message.content
-        thumb_url = str(author.avatar_url_as(size=64))
-
-        await hof_channel.send(
-            embed=discord.Embed(title=title, description=description)
-            .set_thumbnail(url=thumb_url)
-            .set_footer(message.jump_url)
-        )
+        await self.add_to_hof(reaction.message)
 

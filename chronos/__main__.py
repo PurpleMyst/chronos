@@ -1,5 +1,7 @@
-import discord  # type: ignore
+import typing as t
 import os
+
+import discord  # type: ignore
 
 from .bot import Bot
 
