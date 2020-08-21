@@ -139,7 +139,7 @@ class Bot:
 
         if partyname not in self.parties:
             await message.channel.send(
-                f"<@{message.author.id}>: Party {partyname!r} does not exist"
+                f"<@{message.author.id}>: Party **{partyname}** does not exist"
             )
             return
 
@@ -158,7 +158,7 @@ class Bot:
             )
         else:
             await message.channel.send(
-                f"Added <@{message.author.id}> to {partyname!r}"
+                f"Added <@{message.author.id}> to **{partyname}**"
             )
             logger.info(
                 "party.added",
