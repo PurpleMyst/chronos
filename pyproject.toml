@@ -12,11 +12,9 @@ structlog = "^20.1.0"
 colorama = "^0.4.3"
 HumanTime = "^0.1.6"
 
-[tool.poetry.dev-dependencies]
+[tool.black]
+line-length = 79
 
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
-
-[tool.black]
-line-length = 79

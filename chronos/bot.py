@@ -11,6 +11,8 @@ import HumanTime as human_time  # type: ignore
 
 
 COMMAND_PREFIX = "c!"
+HOF_EMOJI = "nat20"
+HOF_COUNT = 4
 
 
 def utc(offset: int) -> timezone:
@@ -271,3 +273,38 @@ class Bot:
             logger.error("error", error=e)
 
         await self.store_parties()
+
+    async def on_reaction_add(
+        self,
+        reaction: discord.Reaction,
+        user: t.Union[discord.User, discord.Member],
+    ) -> None:
+        if (
+            getattr(reaction.emoji, "name", reaction.emoji) != "nat20"
+            or reaction.count != HOF_COUNT
+        ):
+            return
+
+        message = reaction.message
+        author = message.author
+
+        logger = structlog.get_logger().bind(
+            message=message.id, author=author.id
+        )
+        logger.info("hof.add")
+
+        hof_channel = self.client.get_channel(int(os.environ["HOF_CHANNEL"]))
+        if hof_channel is None:
+            logger.error("hof.notfound")
+            return
+
+        title = author.name
+        description = message.content
+        thumb_url = str(author.avatar_url_as(size=64))
+
+        await hof_channel.send(
+            embed=discord.Embed(title=title, description=description)
+            .set_thumbnail(url=thumb_url)
+            .set_footer(message.jump_url)
+        )
+
