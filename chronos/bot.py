@@ -53,7 +53,7 @@ class Bot:
         return False
 
     async def load_parties(self) -> None:
-        logger = structlog.get_logger.bind()
+        logger = structlog.get_logger().bind()
 
         if await self._find_storage_message():
             logger.debug("load.found_storage", parties=self.parties)
