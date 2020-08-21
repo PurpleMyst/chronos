@@ -185,7 +185,7 @@ class Bot:
                 ),
             )
 
-        await message.channel.send(embed=embed)
+        await message.channel.send(f"<@{message.author.id}>", embed=embed)
 
     async def show_help(self, message: discord.Message) -> None:
         "Show the installed commands"
@@ -199,7 +199,7 @@ class Bot:
                 name=f"!{command}", value=func.__doc__ or "No help given."
             )
 
-        await message.channel.send(embed=embed)
+        await message.channel.send(f"<@{message.author.id}>", embed=embed)
 
     COMMANDS = {
         "createparty": createparty,
