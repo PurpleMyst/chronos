@@ -53,18 +53,29 @@ class Bot:
         return False
 
     async def load_parties(self) -> None:
+        logger = structlog.get_logger.bind()
+
         if await self._find_storage_message():
+            logger.debug("load.found_storage", parties=self.parties)
             assert self.storage_msg is not None
             self.parties = pickle.loads(b64decode(self.storage_msg.content))
+        logger.info("load.parties", parties=self.parties)
+        else:
+            logger.debug("load.no_storage", parties=self.parties)
 
     async def store_parties(self) -> None:
+        logger = structlog.get_logger.bind()
+
         content = b64encode(pickle.dumps(self.parties)).decode("ascii")
+        logger.debug("store.content", content=content)
 
         # If there's no storage message to be found, create it
         if not (await self._find_storage_message()):
+            logger.info("store.created_message", parties=self.parties)
             self.storage_msg = await self._storage_channel.send(content)
             return
 
+        logger.info("store.edited_message", parties=self.parties)
         assert self.storage_msg is not None
         await self.storage_msg.edit(content=content)
 
