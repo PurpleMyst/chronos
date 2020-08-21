@@ -285,13 +285,9 @@ class Bot:
             logger.error("hof.notfound")
             return
 
-        title = author.name
-        description = message.content
-        thumb_url = str(author.avatar_url_as(size=16))
-
         await hof_channel.send(
-            embed=discord.Embed(title=title, description=description)
-            .set_thumbnail(url=thumb_url)
+            embed=discord.Embed(description=message.content)
+            .set_author(name=author.name, icon_url=str(author.avatar_url))
             .set_footer(text=message.jump_url)
         )
 
