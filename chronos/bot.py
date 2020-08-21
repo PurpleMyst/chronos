@@ -76,6 +76,16 @@ class Bot:
         )
 
         partyname = message.content.split()[1]
+
+        if partyname in self.parties:
+            logger.debug(
+                "party.already_exists", party=partyname, parties=self.parties
+            )
+            await message.channel.send(
+                f"<@{message.author.id}>: **{partyname}** already exists"
+            )
+            return
+
         self.parties[partyname] = {}
         logger.info("party.created", party=partyname, parties=self.parties)
         await message.channel.send(
