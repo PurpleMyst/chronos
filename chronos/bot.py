@@ -1,5 +1,5 @@
 import typing as t
-import datetime
+from datetime import datetime, timezone, timedelta
 import pickle
 from base64 import b64encode, b64decode
 
@@ -8,6 +8,10 @@ import structlog  # type: ignore
 import HumanTime as human_time  # type: ignore
 
 from . import secretdata
+
+
+def utc(offset: int) -> timezone:
+    return timezone(timedelta(hours=offset))
 
 
 def by_id(needle_id: int, haystack: t.Iterable[t.Any]) -> t.Any:
@@ -126,7 +130,7 @@ class Bot:
         # Parse the time given by the message sender and
         # make sure it's not timezone-aware
         _, time = message.content.split(" ", maxsplit=1)
-        dt: datetime.datetime = human_time.parseTime(time)
+        dt: datetime = human_time.parseTime(time)
         assert dt.tzinfo is None
         logger.info("parsed_time", from_=time, to=dt)
 
@@ -144,19 +148,17 @@ class Bot:
         logger.info("found_party", party=partyname, offset=offset)
 
         # Make the parsed datetime timezone-aware
-        tz = datetime.timezone(datetime.timedelta(hours=offset))
+        tz = utc(offset)
         dt = dt.replace(tzinfo=tz)
 
         # Calculate the correct datetime for each party member and show it
-        parts = []
-        for id_, offset in party.items():
-            tz = datetime.timezone(datetime.timedelta(hours=offset))
-            dt_tz = dt.astimezone(tz)
-            parts.append(
+        await message.channel.send(
+            "\n".join(
                 f"For <@{id_}>, in UTC{offset:+03}, "
-                f"it's {dt_tz.strftime('%A at %H:%M')}"
+                f"it's {dt.astimezone(utc(offset)).strftime('%A at %H:%M')}"
+                for id_, offset in party.items()
             )
-        await message.channel.send("\n".join(parts))
+        )
 
     async def on_message(self, message: discord.Message) -> None:
         if message.content.startswith("!createparty "):
