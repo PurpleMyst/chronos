@@ -59,7 +59,7 @@ class Bot:
             logger.debug("load.found_storage", parties=self.parties)
             assert self.storage_msg is not None
             self.parties = pickle.loads(b64decode(self.storage_msg.content))
-        logger.info("load.parties", parties=self.parties)
+            logger.info("load.parties", parties=self.parties)
         else:
             logger.debug("load.no_storage", parties=self.parties)
 
