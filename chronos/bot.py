@@ -163,15 +163,37 @@ class Bot:
             )
         )
 
+    async def list_parties(self, message: discord.Message) -> None:
+        embed = discord.Embed(
+            title="Parties", color=discord.Color.from_rgb(0x2A, 0x17, 0x42)
+        )
+
+        for partyname, party in self.parties.items():
+            embed.add_field(
+                name=partyname,
+                value=", ".join(
+                    f"{self.client.get_user(id_)} (UTC{offset:+03})"
+                    for id_, offset in party.items()
+                ),
+            )
+
+        message.channel.send(embed=embed)
+
+    COMMANDS = {
+        "createparty": createparty,
+        "parties": list_parties,
+        "addtimezone": addtimezone,
+        "convert": convert,
+    }
+
     async def on_message(self, message: discord.Message) -> None:
-        if message.content.startswith("!createparty "):
-            await self.createparty(message)
-        elif message.content.startswith("!addtimezone "):
-            await self.addtimezone(message)
-        elif message.content.startswith("!convert "):
-            await self.convert(message)
-        else:
-            # don't store the parties if it's not needed
+        if not message.content.startswith("!"):
             return
 
+        command = message.content.split(" ", 1)[0][1:]
+        if command not in self.__class__.COMMANDS:
+            return
+        meth = self.__class__.COMMANDS[command]
+
+        await meth(self, message)
         await self.store_parties()
