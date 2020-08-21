@@ -170,5 +170,8 @@ class Bot:
             await self.addtimezone(message)
         elif message.content.startswith("!convert "):
             await self.convert(message)
+        else:
+            # don't store the parties if it's not needed
+            return
 
         await self.store_parties()
