@@ -287,7 +287,7 @@ class Bot:
 
         title = author.name
         description = message.content
-        thumb_url = str(author.avatar_url_as(size=64))
+        thumb_url = str(author.avatar_url_as(size=16))
 
         await hof_channel.send(
             embed=discord.Embed(title=title, description=description)
