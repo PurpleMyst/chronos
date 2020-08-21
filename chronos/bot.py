@@ -85,7 +85,7 @@ class Bot:
                 "party.already_exists", party=partyname, parties=self.parties
             )
             await message.channel.send(
-                f"<@{message.author.id}>: **{partyname}** already exists"
+                f"<@{message.author.id}>: Party **{partyname}** already exists"
             )
             return
 
@@ -94,6 +94,31 @@ class Bot:
         await message.channel.send(
             f"<@{message.author.id}>: Created party **{partyname}**"
         )
+
+    async def deleteparty(self, message: discord.Message) -> None:
+        "Delete an existing party"
+
+        logger = structlog.get_logger().bind(
+            member_id=message.author.id, member_name=message.author.name
+        )
+
+        partyname = message.content.split()[1]
+
+        if partyname in self.parties:
+            del self.parties[partyname]
+            logger.debug(
+                "party.deleted", party=partyname, parties=self.parties
+            )
+            await message.channel.send(
+                f"<@{message.author.id}>: Party **{partyname}** was deleted"
+            )
+        else:
+            logger.info(
+                "party.unexisting", party=partyname, parties=self.parties
+            )
+            await message.channel.send(
+                f"<@{message.author.id}>: Party **{partyname}** does not exist"
+            )
 
     async def addtimezone(self, message: discord.Message) -> None:
         "Add yourself to a party, with your UTC offset"
@@ -216,6 +241,7 @@ class Bot:
 
     COMMANDS = {
         "createparty": createparty,
+        "deleteparty": deleteparty,
         "parties": list_parties,
         "addtimezone": addtimezone,
         "convert": convert,
