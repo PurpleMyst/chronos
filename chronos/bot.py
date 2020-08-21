@@ -260,7 +260,7 @@ class Bot:
             return
 
         try:
-            message = message.channel.fetch_message(message_id)
+            message = await message.channel.fetch_message(message_id)
         except discord.NotFound:
             await message.channel.send(
                 f"<@{message.author.id}>: Message not found."
@@ -268,6 +268,9 @@ class Bot:
             return
 
         await self.add_to_hof(message)
+        await message.channel.send(
+            f"<@{message.author.id}>: Added message to the Hall of Fame"
+        )
 
     async def add_to_hof(self, message: discord.Message) -> None:
         author = message.author
