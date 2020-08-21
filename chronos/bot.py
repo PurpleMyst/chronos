@@ -141,7 +141,7 @@ class Bot:
         )
 
         parts = message.content.split()
-        if len(parts) != 3 or len(parts) != 4:
+        if len(parts) != 3 and len(parts) != 4:
             await message.channel.send(
                 f"<@{message.author.id}>: "
                 "USAGE: !addtimezone PARTY_NAME UTC_OFFSET [MEMBER_ID]"
