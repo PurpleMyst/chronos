@@ -286,7 +286,9 @@ class Bot:
             return
 
         await hof_channel.send(
-            embed=discord.Embed(description=message.content)
+            embed=discord.Embed(
+                url=message.jump_url, description=message.content
+            )
             .set_author(name=author.name, icon_url=str(author.avatar_url))
             .set_footer(text=message.jump_url)
         )
