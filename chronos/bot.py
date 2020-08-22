@@ -348,14 +348,7 @@ class Bot:
         reaction: discord.Reaction,
         _user: t.Union[discord.User, discord.Member],
     ) -> None:
-        logger = structlog.get_logger().bind()
-
-        logger.debug(
-            "reaction",
-            reaction=reaction,
-            name=getattr(reaction.emoji, "name", reaction.emoji),
-            count=reaction.count,
-        )
+        logger = structlog.get_logger().bind(message_id=reaction.message.id)
 
         if (
             getattr(reaction.emoji, "name", reaction.emoji) != "nat20"
@@ -363,7 +356,7 @@ class Bot:
         ):
             return
 
-        logger.debug("hof.reaction_reached")
+        logger.info("hof.reaction_reached")
 
         await self.add_to_hof(reaction.message)
 
