@@ -1,0 +1,26 @@
+name: mypy & black
+on: push
+
+jobs:
+  mypy_and_black:
+    name: mypy & black
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2.0.0
+        with:
+          poetry-version: "1.0.10"
+      - name: Install pip dependencies
+        run: poetry install --no-root
+      - name: Run black
+        run: poetry run python -m black --check chronos
+      - name: Run mypy
+        run: poetry run python -m mypy chronos

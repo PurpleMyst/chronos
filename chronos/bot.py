@@ -237,8 +237,11 @@ class Bot:
         "List the known parties"
 
         embed = discord.Embed(
-            title="Parties", color=discord.Color.from_rgb(0x91, 0xD1, 0x8B),
-        ).set_footer(text=f"{len(self.parties)} found",)
+            title="Parties",
+            color=discord.Color.from_rgb(0x91, 0xD1, 0x8B),
+        ).set_footer(
+            text=f"{len(self.parties)} found",
+        )
 
         for partyname, party in self.parties.items():
             embed.add_field(
@@ -379,4 +382,3 @@ class Bot:
         logger.info("hof.reaction_reached")
 
         await self.add_to_hof(reaction.message)
-
