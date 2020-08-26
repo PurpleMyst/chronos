@@ -1,7 +1,7 @@
 import typing as t
 import os
 
-import discord  # type: ignore
+import discord
 
 from .bot import Bot
 

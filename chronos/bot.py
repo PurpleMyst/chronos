@@ -5,7 +5,7 @@ import os
 from base64 import b64encode, b64decode
 from functools import cached_property
 
-import discord  # type: ignore
+import discord
 import structlog  # type: ignore
 import HumanTime as human_time  # type: ignore
 
@@ -19,7 +19,14 @@ def utc(offset: int) -> timezone:
     return timezone(timedelta(hours=offset))
 
 
-def by_id(needle_id: int, haystack: t.Iterable[t.Any]) -> t.Any:
+class HasId(t.Protocol):
+    id: int
+
+
+T = t.TypeVar("T", bound=HasId)
+
+
+def by_id(needle_id: int, haystack: t.Iterable[T]) -> T:
     "Find an item by its ID in an iterable"
     return next(item for item in haystack if item.id == needle_id)
 
@@ -66,7 +73,7 @@ class Bot:
             for partyname, party in self.parties.items():
                 for key, value in party.items():
                     if isinstance(key, str):
-                        del party[key]  # type: ignore
+                        del party[key]
                         party[int(key)] = value
                         logger.debug(
                             "load.fixed",
@@ -312,6 +319,7 @@ class Bot:
         logger.info("hof.add")
 
         hof_channel = self.client.get_channel(int(os.environ["HOF_CHANNEL"]))
+        assert isinstance(hof_channel, discord.TextChannel)
         if hof_channel is None:
             logger.error("hof.notfound")
             return
@@ -323,8 +331,9 @@ class Bot:
         )
 
         for embed in message.embeds:
-            if embed.image is not discord.Embed.Empty:
-                embed.set_image(embed.image.url)
+            logger.debug("hof.embed.image", embed=embed, image=embed.image)
+            if embed.image is not discord.Embed.Empty:  # type: ignore
+                embed.set_image(url=embed.image.url)
                 break
 
         await hof_channel.send(embed=embed)

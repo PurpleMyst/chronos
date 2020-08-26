@@ -8,6 +8,7 @@ license = "GPL-3.0-only"
 [tool.poetry.dependencies]
 python = "^3.8"
 "discord.py" = "^1.4.1"
+"discord.py-stubs" = "^1.4.1"
 structlog = "^20.1.0"
 colorama = "^0.4.3"
 HumanTime = "^0.1.6"
