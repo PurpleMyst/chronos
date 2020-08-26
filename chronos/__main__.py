@@ -2,11 +2,23 @@ import typing as t
 import os
 
 import discord
+import structlog  # type: ignore
 
 from .bot import Bot
 
 client = discord.Client()
 bot = Bot(client)
+
+
+structlog.configure(
+    processors=[
+        structlog.processors.StackInfoRenderer(),
+        structlog.dev.set_exc_info,
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        structlog.dev.JSONRenderer(),
+    ],
+)
 
 
 @client.event
