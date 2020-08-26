@@ -340,7 +340,7 @@ class Bot:
     }
 
     async def on_message(self, message: discord.Message) -> None:
-        if message.author.bot or message.author == client.user:
+        if message.author.bot or message.author == self.client.user:
             return
 
         if not message.content.startswith(COMMAND_PREFIX):
