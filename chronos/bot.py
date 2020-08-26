@@ -9,26 +9,12 @@ import discord
 import structlog  # type: ignore
 import HumanTime as human_time  # type: ignore
 
+from .utils import utc, by_id
+
 
 COMMAND_PREFIX = "c!"
 HOF_EMOJI = "nat20"
 HOF_COUNT = 4
-
-
-def utc(offset: int) -> timezone:
-    return timezone(timedelta(hours=offset))
-
-
-class HasId(t.Protocol):
-    id: int
-
-
-T = t.TypeVar("T", bound=HasId)
-
-
-def by_id(needle_id: int, haystack: t.Iterable[T]) -> T:
-    "Find an item by its ID in an iterable"
-    return next(item for item in haystack if item.id == needle_id)
 
 
 class Bot:
