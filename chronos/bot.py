@@ -57,17 +57,18 @@ class Bot:
 
             # fix for stupid bug, can remove later
             for partyname, party in self.parties.items():
-                for key, value in party.items():
-                    if isinstance(key, str):
-                        del party[key]
-                        party[int(key)] = value
-                        logger.debug(
-                            "load.fixed",
-                            partyname=partyname,
-                            party=party,
-                            key=key,
-                            value=value,
-                        )
+                # we use a list comprehension to avoid mutating the party while we're iterating over it
+                for key in [key for key in party if isinstance(key, str)]:
+                    value = party[key]
+                    del party[key]
+                    party[int(key)] = value
+                    logger.debug(
+                        "load.fixed",
+                        partyname=partyname,
+                        party=party,
+                        key=key,
+                        value=value,
+                    )
         else:
             logger.debug("load.no_storage", parties=self.parties)
 
