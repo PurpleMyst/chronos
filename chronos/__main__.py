@@ -16,7 +16,7 @@ structlog.configure(
         structlog.dev.set_exc_info,
         structlog.processors.format_exc_info,
         structlog.processors.UnicodeDecoder(),
-        structlog.processors.JSONRenderer(),
+        structlog.processors.KeyValueRenderer(key_order=["event"]),
     ],
 )
 
