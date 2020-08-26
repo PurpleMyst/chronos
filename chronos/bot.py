@@ -30,6 +30,7 @@ class Bot:
 
         self.storage_msg: t.Optional[discord.Message] = None
         self.parties: t.Dict[str, t.Dict[int, int]] = {}
+        self._loaded_parties = False
 
     @cached_property
     def _storage_channel(self) -> discord.TextChannel:
@@ -92,11 +93,6 @@ class Bot:
         logger.info("store.edited_message", parties=self.parties)
         assert self.storage_msg is not None
         await self.storage_msg.edit(content=content)
-
-    async def on_ready(self) -> None:
-        logger = structlog.get_logger().bind()
-        await self.load_parties()
-        logger.info("ready", parties=self.parties)
 
     async def createparty(self, message: discord.Message) -> None:
         "Create a new party"
@@ -344,8 +340,15 @@ class Bot:
     }
 
     async def on_message(self, message: discord.Message) -> None:
+        if message.author.bot or message.author == client.user:
+            return
+
         if not message.content.startswith(COMMAND_PREFIX):
             return
+
+        if not self._loaded_parties:
+            await self.load_parties()
+            self._loaded_parties = True
 
         logger = structlog.get_logger().bind(
             member_id=message.author.id, member_name=message.author.name

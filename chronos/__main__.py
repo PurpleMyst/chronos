@@ -10,16 +10,7 @@ bot = Bot(client)
 
 
 @client.event
-async def on_ready() -> None:
-    await bot.on_ready()
-
-
-@client.event
 async def on_message(message: discord.Message) -> None:
-    # Don't wanna answer to bots (including ourselves)
-    if message.author.bot or message.author == client.user:
-        return
-
     await bot.on_message(message)
 
 
