@@ -204,7 +204,16 @@ class Bot:
         # Parse the time given by the message sender and
         # make sure it's not timezone-aware
         _, time = message.content.split(" ", maxsplit=1)
-        dt: datetime = human_time.parseTime(time)
+
+        try:
+            dt: datetime = human_time.parseTime(time)
+        except ValueError:
+            logger.debug("invalid_time", time=time)
+            await message.channel.send(
+                f"<@{message.author.id}>: Invalid timestamp {time!r}"
+            )
+            return
+
         assert dt.tzinfo is None
         logger.info("parsed_time", from_=time, to=dt)
 
