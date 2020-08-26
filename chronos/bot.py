@@ -60,6 +60,20 @@ class Bot:
             assert self.storage_msg is not None
             self.parties = pickle.loads(b64decode(self.storage_msg.content))
             logger.info("load.parties", parties=self.parties)
+
+            # fix for stupid bug, can remove later
+            for partyname, party in self.parties.items():
+                for key, value in party.items():
+                    if isinstance(key, str):
+                        del party[key]  # type: ignore
+                        party[int(key)] = value
+                        logger.debug(
+                            "load.fixed",
+                            partyname=partyname,
+                            party=party,
+                            key=key,
+                            value=value,
+                        )
         else:
             logger.debug("load.no_storage", parties=self.parties)
 
@@ -157,7 +171,15 @@ class Bot:
             )
             return
 
-        id_ = parts[3] if len(parts) == 4 else message.author.id
+        try:
+            id_ = int(parts[3]) if len(parts) == 4 else message.author.id
+        except ValueError:
+            await message.channel.send(
+                f"<@{message.author.id}>: "
+                "USAGE: !addtimezone PARTY_NAME UTC_OFFSET [MEMBER_ID]"
+            )
+            return
+
         logger = logger.bind(party_member_id=id_)
 
         for partyname, party in self.parties.items():
