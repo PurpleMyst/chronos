@@ -1,5 +1,5 @@
 import typing as t
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 import pickle
 import os
 from base64 import b64encode, b64decode
@@ -57,7 +57,8 @@ class Bot:
 
             # fix for stupid bug, can remove later
             for partyname, party in self.parties.items():
-                # we use a list comprehension to avoid mutating the party while we're iterating over it
+                # we use a list comprehension to avoid mutating the party
+                # while we're iterating over it
                 for key in [key for key in party if isinstance(key, str)]:
                     value = party[key]
                     del party[key]
@@ -362,7 +363,8 @@ class Bot:
             member_id=message.author.id, member_name=message.author.name
         )
 
-        command = message.content.split(" ", 1)[0][len(COMMAND_PREFIX) :]
+        parts = message.content.split(" ", 1)
+        command = parts[0][len(COMMAND_PREFIX) :]  # noqa
         logger.debug("command.requested", command=command)
         if command not in self.__class__.COMMANDS:
             logger.debug("command.notfound", command=command)
