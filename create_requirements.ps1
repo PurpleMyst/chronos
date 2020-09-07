@@ -1,1 +1,2 @@
-py -m poetry run py -m pip freeze | Out-File -Encoding utf8 requirements.txt
+$requirements = & py -m poetry run py -m pip freeze
+[IO.File]::WriteAllLines("requirements.txt", $requirements)
