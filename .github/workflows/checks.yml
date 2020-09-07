@@ -61,5 +61,5 @@ jobs:
         run: poetry install
       - name: Create requirements.txt
         run: python -m poetry run python -m pip freeze > requirements.check.txt
-      - name: Check requirements.txt
-        run: diff requirements.txt requirements.check.txt
+      - nae: Check requirements.txt
+        run: diff --text requirements.txt requirements.check.txt
