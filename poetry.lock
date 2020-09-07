@@ -120,6 +120,17 @@ typing-extensions = ">=3.7.4,<4.0.0"
 
 [[package]]
 category = "main"
+description = "Fuzzy string matching in python"
+name = "fuzzywuzzy"
+optional = false
+python-versions = "*"
+version = "0.18.0"
+
+[package.extras]
+speedup = ["python-levenshtein (>=0.12)"]
+
+[[package]]
+category = "main"
 description = "Time for Humans"
 name = "humantime"
 optional = false
@@ -244,7 +255,7 @@ idna = ">=2.0"
 multidict = ">=4.0"
 
 [metadata]
-content-hash = "a1a1a8957281751134fbbffa40a2c3f9504f0209d88d0c86811a03c06b214a6d"
+content-hash = "777b4f43d218138df47a6dd6617b951f65d4e6bb4072f0bf024732ea725d82e6"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -298,6 +309,10 @@ colorama = [
 "discord.py-stubs" = [
     {file = "discord.py-stubs-1.4.0.2.tar.gz", hash = "sha256:5db4328b4a61d25abca4acae26494ab0b20486c224c6ca3a38e197dbc4d43869"},
     {file = "discord.py_stubs-1.4.0.2-py3-none-any.whl", hash = "sha256:7aedef227eef36d4f23afd6dbb3787e54ffe89d5fdfeb9dcde110b74409ff6d1"},
+]
+fuzzywuzzy = [
+    {file = "fuzzywuzzy-0.18.0-py2.py3-none-any.whl", hash = "sha256:928244b28db720d1e0ee7587acf660ea49d7e4c632569cad4f1cd7e68a5f0993"},
+    {file = "fuzzywuzzy-0.18.0.tar.gz", hash = "sha256:45016e92264780e58972dca1b3d939ac864b78437422beecebb3095f8efd00e8"},
 ]
 humantime = [
     {file = "HumanTime-0.1.6-py3-none-any.whl", hash = "sha256:073b9e7b11ac02da97fac00898c30e61e55022f4b63251586ea9da5b85d56925"},

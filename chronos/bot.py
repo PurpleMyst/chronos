@@ -8,6 +8,7 @@ from functools import cached_property
 import discord
 import structlog  # type: ignore
 import HumanTime as human_time  # type: ignore
+import fuzzywuzzy.process  # type: ignore
 
 from .utils import utc, by_id
 
@@ -31,6 +32,29 @@ class Bot:
             int(os.environ["STORAGE_GUILD"]), self.client.guilds
         )
         return by_id(int(os.environ["STORAGE_CHANNEL"]), guild.text_channels)
+
+    def _parse_identifier(
+        self, in_message: discord.Message, ident: str
+    ) -> int:
+        "Convert an identifier (a name or an ID string) to an ID"
+
+        try:
+            return int(ident)
+        except ValueError:
+            pass
+
+        if in_message.guild is not None:
+            members = [
+                member.display_name for member in in_message.guild.members
+            ]
+            member_name, _score = fuzzywuzzy.process.extractOne(ident, members)
+            return next(
+                member.id
+                for member in in_message.guild.members
+                if member.display_name == member_name
+            )
+
+        raise ValueError(f"Invalid identifier {ident!r}")
 
     async def _find_storage_message(self) -> bool:
         "Look for the storage message and return if it was found"
@@ -149,7 +173,7 @@ class Bot:
         if len(parts) != 3 and len(parts) != 4:
             await message.channel.send(
                 f"<@{message.author.id}>: "
-                "USAGE: !addtimezone PARTY_NAME UTC_OFFSET [MEMBER_ID]"
+                "USAGE: !addtimezone PARTY_NAME UTC_OFFSET [MEMBER_IDENTIFIER]"
             )
             return
 
@@ -163,11 +187,15 @@ class Bot:
             return
 
         try:
-            id_ = int(parts[3]) if len(parts) == 4 else message.author.id
+            id_ = (
+                self._parse_identifier(message, parts[3])
+                if len(parts) == 4
+                else message.author.id
+            )
         except ValueError:
             await message.channel.send(
                 f"<@{message.author.id}>: "
-                "USAGE: !addtimezone PARTY_NAME UTC_OFFSET [MEMBER_ID]"
+                "USAGE: !addtimezone PARTY_NAME UTC_OFFSET [MEMBER_IDENTIFIER]"
             )
             return
 
@@ -275,11 +303,11 @@ class Bot:
 
         try:
             _, as_str, time = message.content.split(" ", maxsplit=2)
-            as_ = int(as_str)
+            as_ = self._parse_identifier(message, as_str)
         except ValueError:
             logger.debug("invalid_usage", content=message.content)
             await message.channel.send(
-                f"<@{message.author.id}>: USAGE: c!convert-as ID TIME"
+                f"<@{message.author.id}>: USAGE: c!convert-as MEMBER_IDENTIFIER TIME"
             )
             return
 
