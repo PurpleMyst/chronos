@@ -195,17 +195,47 @@ class Bot:
                 parties=self.parties,
             )
 
+    def _party_of(self, user: int) -> t.Tuple[int, str, t.Dict[int, int]]:
+        offset = None
+        for partyname, party in self.parties.items():
+            if user in party:
+                offset = party[user]
+                return (offset, partyname, party)
+
+        raise LookupError(f"Could not find party for user with ID {user}")
+
+    async def do_convert(
+        self,
+        channel: discord.TextChannel,
+        party: t.Dict[int, int],
+        dt: datetime,
+    ) -> None:
+        await channel.send(
+            "\n".join(
+                f"For <@{id_}>, in UTC{offset:+03}, "
+                f"it's {dt.astimezone(utc(offset)).strftime('%A at %H:%M')}"
+                for id_, offset in party.items()
+            )
+        )
+
     async def convert(self, message: discord.Message) -> None:
-        "Convert a given timestamp to your party's timezones"
+        "Convert a given timestamp from your timezone to your party's timezones"
 
         logger = structlog.get_logger().bind(
             member_id=message.author.id, member_name=message.author.name
         )
 
+        try:
+            _, time = message.content.split(" ", maxsplit=1)
+        except ValueError:
+            logger.debug("invalid_usage", content=message.content)
+            await message.channel.send(
+                f"<@{message.author.id}>: USAGE: c!convert TIME"
+            )
+            return
+
         # Parse the time given by the message sender and
         # make sure it's not timezone-aware
-        _, time = message.content.split(" ", maxsplit=1)
-
         try:
             dt: datetime = human_time.parseTime(time)
         except ValueError:
@@ -219,12 +249,9 @@ class Bot:
         logger.info("parsed_time", from_=time, to=dt)
 
         # Find the message sender's party and UTC offset
-        offset = None
-        for partyname, party in self.parties.items():
-            if message.author.id in party:
-                offset = party[message.author.id]
-                break
-        else:  # no break
+        try:
+            offset, partyname, party = self._party_of(message.author.id)
+        except LookupError:
             await message.channel.send(
                 f"<@{message.author.id}>: You're not in any party!"
             )
@@ -236,13 +263,56 @@ class Bot:
         dt = dt.replace(tzinfo=tz)
 
         # Calculate the correct datetime for each party member and show it
-        await message.channel.send(
-            "\n".join(
-                f"For <@{id_}>, in UTC{offset:+03}, "
-                f"it's {dt.astimezone(utc(offset)).strftime('%A at %H:%M')}"
-                for id_, offset in party.items()
-            )
+        assert isinstance(message.channel, discord.TextChannel)
+        await self.do_convert(message.channel, party, dt)
+
+    async def convert_as(self, message: discord.Message) -> None:
+        "Convert a given timestamp from someone's timezone to your party's timezones"
+
+        logger = structlog.get_logger().bind(
+            member_id=message.author.id, member_name=message.author.name
         )
+
+        try:
+            _, as_str, time = message.content.split(" ", maxsplit=1)
+            as_ = int(as_str)
+        except ValueError:
+            logger.debug("invalid_usage", content=message.content)
+            await message.channel.send(
+                f"<@{message.author.id}>: USAGE: c!convert-as ID TIME"
+            )
+            return
+
+        # Parse the time given by the message sender and
+        # make sure it's not timezone-aware
+        try:
+            dt: datetime = human_time.parseTime(time)
+        except ValueError:
+            logger.debug("invalid_time", time=time)
+            await message.channel.send(
+                f"<@{message.author.id}>: Invalid timestamp {time!r}"
+            )
+            return
+        assert dt.tzinfo is None
+        logger.info("parsed_time", from_=time, to=dt)
+
+        # Find the message sender's party and UTC offset
+        try:
+            offset, partyname, party = self._party_of(as_)
+        except LookupError:
+            await message.channel.send(
+                f"<@{message.author.id}>: <@{as_}> is not in any party!"
+            )
+            return
+        logger.info("found_party", as_=as_, party=partyname, offset=offset)
+
+        # Make the parsed datetime timezone-aware
+        tz = utc(offset)
+        dt = dt.replace(tzinfo=tz)
+
+        # Calculate the correct datetime for each party member and show it
+        assert isinstance(message.channel, discord.TextChannel)
+        await self.do_convert(message.channel, party, dt)
 
     async def list_parties(self, message: discord.Message) -> None:
         "List the known parties"
@@ -345,6 +415,7 @@ class Bot:
         "addtimezone": addtimezone,
         "hof": manual_hof,
         "convert": convert,
+        "convert-as": convert_as,
         "help": show_help,
     }
 
