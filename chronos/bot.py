@@ -409,10 +409,10 @@ class Bot:
         await hof_channel.send(embed=embed)
 
     COMMANDS = {
-        "createparty": createparty,
-        "deleteparty": deleteparty,
+        "create-party": createparty,
+        "delete-party": deleteparty,
         "parties": list_parties,
-        "addtimezone": addtimezone,
+        "add-timezone": addtimezone,
         "hof": manual_hof,
         "convert": convert,
         "convert-as": convert_as,
