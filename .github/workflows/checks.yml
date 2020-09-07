@@ -1,0 +1,65 @@
+name: checks
+on: push
+
+jobs:
+  mypy:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2.0.0
+        with:
+          poetry-version: "1.0.10"
+      - name: Install pip dependencies
+        run: poetry install --no-root
+      - name: Run mypy
+        run: poetry run python -m mypy chronos
+
+  black:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2.0.0
+        with:
+          poetry-version: "1.0.10"
+      - name: Install pip dependencies
+        run: poetry install --no-root
+      - name: Run black
+        run: poetry run python -m black --check chronos
+
+  requirements.txt:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2.0.0
+        with:
+          poetry-version: "1.0.10"
+      - name: Install pip dependencies
+        run: poetry install
+      - name: Create requirements.txt
+        run: python -m poetry run python -m pip freeze > requirements.check.txt
+      - name: Check requriements.txt
+        run: diff -q requirements.txt requirements.check.txt
