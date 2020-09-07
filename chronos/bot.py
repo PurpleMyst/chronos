@@ -51,7 +51,7 @@ class Bot:
                 for member in in_message.guild.members
             }
             member_id, _score, _key = fuzzy_find(ident, members)
-            return t.cast(member_id)
+            return t.cast(int, member_id)
 
         # If none of the previous checks succeeded, this identifier is (probably) invalid
         raise ValueError(f"Invalid identifier {ident!r}")
