@@ -42,7 +42,7 @@ jobs:
       - name: Run black
         run: poetry run python -m black --check chronos
 
-  requirements.txt:
+  pip-requirements:
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
