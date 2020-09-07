@@ -58,8 +58,8 @@ jobs:
         with:
           poetry-version: "1.0.10"
       - name: Install pip dependencies
-        run: poetry install
+        run: poetry install --no-root
       - name: Create requirements.txt
-        run: python -m poetry run python -m pip freeze > requirements.check.txt
+        run: poetry run python -m pip freeze > requirements.check.txt
       - name: Check requirements.txt
         run: diff --text requirements.txt requirements.check.txt
