@@ -8,7 +8,7 @@ from functools import cached_property
 import discord
 import structlog  # type: ignore
 import HumanTime as human_time  # type: ignore
-import fuzzywuzzy.process  # type: ignore
+from fuzzywuzzy.process import extractOne as fuzzy_find  # type: ignore
 
 from .utils import utc, by_id
 
@@ -44,15 +44,12 @@ class Bot:
             pass
 
         if in_message.guild is not None:
-            members = [
-                member.display_name for member in in_message.guild.members
-            ]
-            member_name, _score = fuzzywuzzy.process.extractOne(ident, members)
-            return next(
-                member.id
+            members = {
+                member.display_name: member.id
                 for member in in_message.guild.members
-                if member.display_name == member_name
-            )
+            }
+            member_id, _score, _key = fuzzy_find(ident, members)
+            return t.cast(member_id)
 
         raise ValueError(f"Invalid identifier {ident!r}")
 
@@ -238,6 +235,7 @@ class Bot:
         party: t.Dict[int, int],
         dt: datetime,
     ) -> None:
+
         await channel.send(
             "\n".join(
                 f"For <@{id_}>, in UTC{offset:+03}, "
