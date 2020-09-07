@@ -274,7 +274,7 @@ class Bot:
         )
 
         try:
-            _, as_str, time = message.content.split(" ", maxsplit=1)
+            _, as_str, time = message.content.split(" ", maxsplit=2)
             as_ = int(as_str)
         except ValueError:
             logger.debug("invalid_usage", content=message.content)
