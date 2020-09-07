@@ -62,4 +62,4 @@ jobs:
       - name: Create requirements.txt
         run: python -m poetry run python -m pip freeze > requirements.check.txt
       - name: Check requirements.txt
-        run: diff -q requirements.txt requirements.check.txt
+        run: diff requirements.txt requirements.check.txt
