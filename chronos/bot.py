@@ -295,7 +295,7 @@ class Bot:
         await self.do_convert(message.channel, party, dt)
 
     async def convert_as(self, message: discord.Message) -> None:
-        "Convert a given timestamp from someone's timezone to your party's timezones"
+        "Convert a given timestamp from someone's timezone to their party's timezones"
 
         logger = structlog.get_logger().bind(
             member_id=message.author.id, member_name=message.author.name
