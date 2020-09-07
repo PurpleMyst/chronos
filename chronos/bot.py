@@ -38,11 +38,13 @@ class Bot:
     ) -> int:
         "Convert an identifier (a name or an ID string) to an ID"
 
+        # Try to parse the given identifier as a numeric ID
         try:
             return int(ident)
         except ValueError:
             pass
 
+        # Try to match it to someone's display name in the current guild
         if in_message.guild is not None:
             members = {
                 member.display_name: member.id
@@ -51,6 +53,7 @@ class Bot:
             member_id, _score, _key = fuzzy_find(ident, members)
             return t.cast(member_id)
 
+        # If none of the previous checks succeeded, this identifier is (probably) invalid
         raise ValueError(f"Invalid identifier {ident!r}")
 
     async def _find_storage_message(self) -> bool:
