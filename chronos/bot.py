@@ -78,22 +78,6 @@ class Bot:
             assert self.storage_msg is not None
             self.parties = pickle.loads(b64decode(self.storage_msg.content))
             logger.info("load.parties", parties=self.parties)
-
-            # fix for stupid bug, can remove later
-            for partyname, party in self.parties.items():
-                # we use a list comprehension to avoid mutating the party
-                # while we're iterating over it
-                for key in [key for key in party if isinstance(key, str)]:
-                    value = party[key]
-                    del party[key]
-                    party[int(key)] = value
-                    logger.debug(
-                        "load.fixed",
-                        partyname=partyname,
-                        party=party,
-                        key=key,
-                        value=value,
-                    )
         else:
             logger.debug("load.no_storage", parties=self.parties)
 
