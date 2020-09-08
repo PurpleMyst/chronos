@@ -12,7 +12,7 @@ python = "^3.8"
 structlog = "^20.1.0"
 colorama = "^0.4.3"
 HumanTime = "^0.1.6"
-fuzzywuzzy = "^0.18.0"
+fuzzywuzzy = {extras = ["speedup"], version = "^0.18.0"}
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.782"
