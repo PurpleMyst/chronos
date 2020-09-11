@@ -507,6 +507,7 @@ class Bot:
         "convert": _convert,
         "convert-as": _convert_as,
         "help": _show_help,
+        "hof-requirements": _hof_reqs,
     }
 
     async def on_message(self, message: discord.Message) -> None:
