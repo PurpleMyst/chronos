@@ -107,7 +107,19 @@ class Bot:
 
         logger.info("store.edited_message")
         assert self._storage_msg is not None
-        await self._storage_msg.edit(content=content)
+
+        try:
+            await self._storage_msg.edit(content=content)
+        except Exception as e:
+            logger.error("storage.edit_failed", error=e)
+            self._storage_msg = None
+
+            # If the reported error was a 404, the message was probably pulled
+            # out from under us, so let's just try again with some simple
+            # recursion
+            if isinstance(e, discord.NotFound):
+                logger.debug("storage.retrying")
+                self._save_storage()
 
     async def _createparty(self, message: discord.Message) -> None:
         "Create a new party"
