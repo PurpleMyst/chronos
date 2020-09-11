@@ -19,8 +19,13 @@ HOF_EMOJI = "nat20"
 HOF_COUNT = 4
 
 
-class Storage(pydantic.BaseModel):
+# per-guild storage
+class GuildStorage(pydantic.BaseModel):
     parties: t.Dict[str, t.Dict[int, int]] = {}
+
+
+class Storage(pydantic.BaseModel):
+    guilds: t.Dict[int, GuildStorage] = {}
 
 
 class Bot:
@@ -128,21 +133,20 @@ class Bot:
             member_id=message.author.id, member_name=message.author.name
         )
 
+        assert message.guild is not None
+        guild = self._storage.guilds.setdefault(message.guild.id, GuildStorage())
+
         partyname = message.content.split()[1]
 
-        if partyname in self._storage.parties:
-            logger.debug(
-                "party.already_exists",
-                party=partyname,
-                parties=self._storage.parties,
-            )
+        if partyname in guild.parties:
+            logger.debug("party.already_exists", party=partyname, parties=guild.parties)
             await message.channel.send(
                 f"<@{message.author.id}>: Party **{partyname}** already exists"
             )
             return
 
-        self._storage.parties[partyname] = {}
-        logger.info("party.created", party=partyname, parties=self._storage.parties)
+        guild.parties[partyname] = {}
+        logger.info("party.created", party=partyname, parties=guild.parties)
         await message.channel.send(
             f"<@{message.author.id}>: Created party **{partyname}**"
         )
@@ -154,13 +158,14 @@ class Bot:
             member_id=message.author.id, member_name=message.author.name
         )
 
+        assert message.guild is not None
+        guild = self._storage.guilds.setdefault(message.guild.id, GuildStorage())
+
         partyname = message.content.split()[1]
 
-        if partyname in self._storage.parties:
-            del self._storage.parties[partyname]
-            logger.debug(
-                "party.deleted", party=partyname, parties=self._storage.parties
-            )
+        if partyname in guild.parties:
+            del guild.parties[partyname]
+            logger.debug("party.deleted", party=partyname, parties=guild.parties)
             await message.channel.send(
                 f"<@{message.author.id}>: Party **{partyname}** was deleted"
             )
@@ -168,7 +173,7 @@ class Bot:
             logger.info(
                 "party.unexisting",
                 party=partyname,
-                parties=self._storage.parties,
+                parties=guild.parties,
             )
             await message.channel.send(
                 f"<@{message.author.id}>: Party **{partyname}** does not exist"
@@ -181,18 +186,21 @@ class Bot:
             member_id=message.author.id, member_name=message.author.name
         )
 
+        assert message.guild is not None
+        guild = self._storage.guilds.setdefault(message.guild.id, GuildStorage())
+
         parts = message.content.split()
         if len(parts) != 3 and len(parts) != 4:
             await message.channel.send(
                 f"<@{message.author.id}>: "
-                "USAGE: !_addtimezone PARTY_NAME UTC_OFFSET [MEMBER_IDENTIFIER]"
+                "USAGE: !addtimezone PARTY_NAME UTC_OFFSET [MEMBER_IDENTIFIER]"
             )
             return
 
         partyname = parts[1]
         offset = parts[2]
 
-        if partyname not in self._storage.parties:
+        if partyname not in guild.parties:
             await message.channel.send(
                 f"<@{message.author.id}>: Party **{partyname}** does not exist"
             )
@@ -207,23 +215,19 @@ class Bot:
         except ValueError:
             await message.channel.send(
                 f"<@{message.author.id}>: "
-                "USAGE: !_addtimezone PARTY_NAME UTC_OFFSET [MEMBER_IDENTIFIER]"
+                "USAGE: !addtimezone PARTY_NAME UTC_OFFSET [MEMBER_IDENTIFIER]"
             )
             return
 
         logger = logger.bind(party_member_id=id_)
 
-        for partyname, party in self._storage.parties.items():
+        for partyname, party in guild.parties.items():
             if id_ in party:
                 del party[id_]
-                logger.info(
-                    "party.removed",
-                    party=partyname,
-                    parties=self._storage.parties,
-                )
+                logger.info("party.removed", party=partyname, parties=guild.parties)
 
         try:
-            self._storage.parties[partyname][id_] = int(offset)
+            guild.parties[partyname][id_] = int(offset)
         except ValueError:
             await message.channel.send(
                 f"<@{message.author.id}>: Invalid offset {offset}"
@@ -234,12 +238,16 @@ class Bot:
                 "party.added",
                 party=partyname,
                 utc_offset=int(offset),
-                parties=self._storage.parties,
+                parties=guild.parties,
             )
 
-    def _party_of(self, user: int) -> t.Tuple[int, str, t.Dict[int, int]]:
+    def _party_of(
+        self, guild_id: int, user: int
+    ) -> t.Tuple[int, str, t.Dict[int, int]]:
+        guild = self._storage.guilds.setdefault(guild_id, GuildStorage())
+
         offset = None
-        for partyname, party in self._storage.parties.items():
+        for partyname, party in guild.parties.items():
             if user in party:
                 offset = party[user]
                 return (offset, partyname, party)
@@ -293,7 +301,10 @@ class Bot:
 
         # Find the message sender's party and UTC offset
         try:
-            offset, partyname, party = self._party_of(message.author.id)
+            assert message.guild is not None
+            offset, partyname, party = self._party_of(
+                message.guild.id, message.author.id
+            )
         except LookupError:
             await message.channel.send(
                 f"<@{message.author.id}>: You're not in any party!"
@@ -341,7 +352,8 @@ class Bot:
 
         # Find the message sender's party and UTC offset
         try:
-            offset, partyname, party = self._party_of(as_)
+            assert message.guild is not None
+            offset, partyname, party = self._party_of(message.guild.id, as_)
         except LookupError:
             await message.channel.send(
                 f"<@{message.author.id}>: <@{as_}> is not in any party!"
@@ -360,14 +372,17 @@ class Bot:
     async def _list_parties(self, message: discord.Message) -> None:
         "List the known parties"
 
+        assert message.guild is not None
+        guild = self._storage.guilds.setdefault(message.guild.id, GuildStorage())
+
         embed = discord.Embed(
             title="Parties",
             color=discord.Color.from_rgb(0x91, 0xD1, 0x8B),
         ).set_footer(
-            text=f"{len(self._storage.parties)} found",
+            text=f"{len(guild.parties)} found",
         )
 
-        for partyname, party in self._storage.parties.items():
+        for partyname, party in guild.parties.items():
             embed.add_field(
                 name=partyname,
                 value=", ".join(
