@@ -450,7 +450,7 @@ class Bot:
         parts = message.content.split(" ", 3)
 
         try:
-            reaction_emoji, reaction_count_str, hof_channel_str = parts
+            _, reaction_emoji, reaction_count_str, hof_channel_str = parts
             reaction_count = int(reaction_count_str)
             hof_channel = int(hof_channel_str)
         except ValueError:
