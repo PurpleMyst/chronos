@@ -79,9 +79,16 @@ class Bot:
         if await self._find_storage_message():
             logger.debug("load.found_storage")
             assert self._storage_msg is not None
-            self._storage = Storage(
-                **pickle.loads(b64decode(self._storage_msg.content))
-            )
+            try:
+                self._storage = Storage(
+                    **pickle.loads(b64decode(self._storage_msg.content))
+                )
+            except pydantic.ValidationError as e:
+                logger.error(
+                    "load.invalid_storage", content=self._storage_msg.content, error=e
+                )
+                return
+
             logger.info("load.storage", storage=self._storage)
         else:
             logger.debug("load.no_storage")
