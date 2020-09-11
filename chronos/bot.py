@@ -119,7 +119,7 @@ class Bot:
             # recursion
             if isinstance(e, discord.NotFound):
                 logger.debug("storage.retrying")
-                self._save_storage()
+                await self._save_storage()
 
     async def _createparty(self, message: discord.Message) -> None:
         "Create a new party"
