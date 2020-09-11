@@ -516,7 +516,7 @@ class Bot:
     async def _test_parse_identifier(self, message: discord.Message) -> None:
         ident = message.content.split(" ", 1)[1]
         await message.author.send(
-            content=f"Parsed to: `{self._parse_identifier(message, ident)`}"
+            content=f"Parsed to: `{self._parse_identifier(message, ident)}`"
         )
 
     COMMANDS = {
