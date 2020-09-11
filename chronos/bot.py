@@ -15,13 +15,18 @@ from .utils import utc, by_id
 
 
 COMMAND_PREFIX = "c!"
-HOF_EMOJI = "nat20"
-HOF_COUNT = 4
+
+
+class HallOfFameRequirements(pydantic.BaseModel):
+    reaction_emoji: str
+    reaction_count: int
+    hof_channel: int
 
 
 # per-guild storage
 class GuildStorage(pydantic.BaseModel):
     parties: t.Dict[str, t.Dict[int, int]] = {}
+    hall_of_fame: t.Optional[HallOfFameRequirements] = None
 
 
 class Storage(pydantic.BaseModel):
@@ -435,6 +440,30 @@ class Bot:
             f"<@{message.author.id}>: Added message to the Hall of Fame"
         )
 
+    async def _hof_reqs(self, message: discord.Message) -> None:
+        "Specify hall-of-fame requirements"
+
+        parts = message.content.split(" ", 3)
+
+        try:
+            reaction_emoji, reaction_count_str, hof_channel_str = parts
+            reaction_count = int(reaction_count_str)
+            hof_channel = int(hof_channel_str)
+        except ValueError:
+            await message.channel.send(
+                f"<@{message.author.id}>: "
+                "USAGE: c!hof-requirements REACTION_EMOJI REACTION_COUNT HOF_CHANNEL_ID"
+            )
+            return
+
+        assert message.guild is not None
+        guild = self._storage.guilds.setdefault(message.guild.id, GuildStorage())
+        guild.hall_of_fame = HallOfFameRequirements(
+            reaction_emoji=reaction_emoji,
+            reaction_count=reaction_count,
+            hof_channel=hof_channel,
+        )
+
     async def _add_to_hof(self, message: discord.Message) -> None:
         author = message.author
 
@@ -443,11 +472,17 @@ class Bot:
         )
         logger.info("hof.add")
 
-        hof_channel = self.client.get_channel(int(os.environ["HOF_CHANNEL"]))
-        assert isinstance(hof_channel, discord.TextChannel)
+        assert message.guild is not None
+        guild = self._storage.guilds.setdefault(message.guild.id, GuildStorage())
+        if guild.hall_of_fame is None:
+            logger.error("hof.notconfigured")
+            return
+
+        hof_channel = self.client.get_channel(guild.hall_of_fame.hof_channel)
         if hof_channel is None:
             logger.error("hof.notfound")
             return
+        assert isinstance(hof_channel, discord.TextChannel)
 
         embed = (
             discord.Embed(url=message.jump_url, description=message.content)
@@ -511,9 +546,16 @@ class Bot:
     ) -> None:
         logger = structlog.get_logger().bind(message_id=reaction.message.id)
 
+        assert reaction.message.guild is not None
+        guild = self._storage.guilds.setdefault(
+            reaction.message.guild.id, GuildStorage()
+        )
+        hof = guild.hall_of_fame
+
         if (
-            getattr(reaction.emoji, "name", reaction.emoji) != "nat20"
-            or reaction.count != HOF_COUNT
+            hof is None
+            or getattr(reaction.emoji, "name", reaction.emoji) != hof.reaction_emoji
+            or reaction.count != hof.reaction_count
         ):
             return
 
