@@ -367,7 +367,8 @@ class Bot:
         )
 
         for command, func in self.COMMANDS.items():
-            embed.add_field(name=f"!{command}", value=func.__doc__ or "No help given.")
+            if func.__doc__:
+                embed.add_field(name=f"!{command}", value=func.__doc__)
 
         await message.channel.send(f"<@{message.author.id}>", embed=embed)
 
