@@ -61,9 +61,9 @@ class Bot:
         # Try to match it to someone's display name in the current guild
         if in_message.guild is not None:
             members = {
-                member.display_name: member.id for member in in_message.guild.members
+                member.id: member.display_name for member in in_message.guild.members
             }
-            member_id, _score, _key = fuzzy_find(ident, members)
+            _key, _score, member_id = fuzzy_find(ident, members)
             structlog.get_logger().debug(
                 "identifier.parsed_to",
                 members=members,
