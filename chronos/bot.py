@@ -8,6 +8,7 @@ from functools import cached_property
 import discord
 import structlog  # type: ignore
 import HumanTime as human_time  # type: ignore
+import pydantic
 from fuzzywuzzy.process import extractOne as fuzzy_find  # type: ignore
 
 from .utils import utc, by_id
@@ -18,6 +19,10 @@ HOF_EMOJI = "nat20"
 HOF_COUNT = 4
 
 
+class Storage(pydantic.BaseModel):
+    parties: t.Dict[str, t.Dict[int, int]] = {}
+
+
 class Bot:
     def __init__(self, client: discord.Client) -> None:
         self.client = client
@@ -25,7 +30,7 @@ class Bot:
         self._storage_msg: t.Optional[discord.Message] = None
         self._loaded_storage = False
 
-        self.parties: t.Dict[str, t.Dict[int, int]] = {}
+        self._storage = Storage()
 
     @cached_property
     def _storage_channel(self) -> discord.TextChannel:
@@ -71,30 +76,32 @@ class Bot:
         # If we get here, we didn't find anything
         return False
 
-    async def _load_parties(self) -> None:
+    async def _load_storage(self) -> None:
         logger = structlog.get_logger().bind()
 
         if await self._find_storage_message():
-            logger.debug("load.found_storage", parties=self.parties)
+            logger.debug("load.found_storage")
             assert self._storage_msg is not None
-            self.parties = pickle.loads(b64decode(self._storage_msg.content))
-            logger.info("load.parties", parties=self.parties)
+            self._storage = Storage(
+                **pickle.loads(b64decode(self._storage_msg.content))
+            )
+            logger.info("load.storage", storage=self._storage)
         else:
-            logger.debug("load.no_storage", parties=self.parties)
+            logger.debug("load.no_storage")
 
-    async def _store_parties(self) -> None:
-        logger = structlog.get_logger().bind()
+    async def _save_storage(self) -> None:
+        logger = structlog.get_logger().bind(storage=self._storage)
 
-        content = b64encode(pickle.dumps(self.parties)).decode("ascii")
+        content = b64encode(pickle.dumps(self._storage.dict())).decode("ascii")
         logger.debug("store.content", content=content)
 
         # If there's no storage message to be found, create it
         if not (await self._find_storage_message()):
-            logger.info("store.created_message", parties=self.parties)
+            logger.info("store.created_message")
             self._storage_msg = await self._storage_channel.send(content)
             return
 
-        logger.info("store.edited_message", parties=self.parties)
+        logger.info("store.edited_message")
         assert self._storage_msg is not None
         await self._storage_msg.edit(content=content)
 
@@ -107,17 +114,21 @@ class Bot:
 
         partyname = message.content.split()[1]
 
-        if partyname in self.parties:
+        if partyname in self._storage.parties:
             logger.debug(
-                "party.already_exists", party=partyname, parties=self.parties
+                "party.already_exists",
+                party=partyname,
+                parties=self._storage.parties,
             )
             await message.channel.send(
                 f"<@{message.author.id}>: Party **{partyname}** already exists"
             )
             return
 
-        self.parties[partyname] = {}
-        logger.info("party.created", party=partyname, parties=self.parties)
+        self._storage.parties[partyname] = {}
+        logger.info(
+            "party.created", party=partyname, parties=self._storage.parties
+        )
         await message.channel.send(
             f"<@{message.author.id}>: Created party **{partyname}**"
         )
@@ -131,17 +142,19 @@ class Bot:
 
         partyname = message.content.split()[1]
 
-        if partyname in self.parties:
-            del self.parties[partyname]
+        if partyname in self._storage.parties:
+            del self._storage.parties[partyname]
             logger.debug(
-                "party.deleted", party=partyname, parties=self.parties
+                "party.deleted", party=partyname, parties=self._storage.parties
             )
             await message.channel.send(
                 f"<@{message.author.id}>: Party **{partyname}** was deleted"
             )
         else:
             logger.info(
-                "party.unexisting", party=partyname, parties=self.parties
+                "party.unexisting",
+                party=partyname,
+                parties=self._storage.parties,
             )
             await message.channel.send(
                 f"<@{message.author.id}>: Party **{partyname}** does not exist"
@@ -165,7 +178,7 @@ class Bot:
         partyname = parts[1]
         offset = parts[2]
 
-        if partyname not in self.parties:
+        if partyname not in self._storage.parties:
             await message.channel.send(
                 f"<@{message.author.id}>: Party **{partyname}** does not exist"
             )
@@ -186,15 +199,17 @@ class Bot:
 
         logger = logger.bind(party_member_id=id_)
 
-        for partyname, party in self.parties.items():
+        for partyname, party in self._storage.parties.items():
             if id_ in party:
                 del party[id_]
                 logger.info(
-                    "party.removed", party=partyname, parties=self.parties
+                    "party.removed",
+                    party=partyname,
+                    parties=self._storage.parties,
                 )
 
         try:
-            self.parties[partyname][id_] = int(offset)
+            self._storage.parties[partyname][id_] = int(offset)
         except ValueError:
             await message.channel.send(
                 f"<@{message.author.id}>: Invalid offset {offset}"
@@ -205,12 +220,12 @@ class Bot:
                 "party.added",
                 party=partyname,
                 utc_offset=int(offset),
-                parties=self.parties,
+                parties=self._storage.parties,
             )
 
     def _party_of(self, user: int) -> t.Tuple[int, str, t.Dict[int, int]]:
         offset = None
-        for partyname, party in self.parties.items():
+        for partyname, party in self._storage.parties.items():
             if user in party:
                 offset = party[user]
                 return (offset, partyname, party)
@@ -335,10 +350,10 @@ class Bot:
             title="Parties",
             color=discord.Color.from_rgb(0x91, 0xD1, 0x8B),
         ).set_footer(
-            text=f"{len(self.parties)} found",
+            text=f"{len(self._storage.parties)} found",
         )
 
-        for partyname, party in self.parties.items():
+        for partyname, party in self._storage.parties.items():
             embed.add_field(
                 name=partyname,
                 value=", ".join(
@@ -441,7 +456,7 @@ class Bot:
             return
 
         if not self._loaded_storage:
-            await self._load_parties()
+            await self._load_storage()
             self._loaded_storage = True
 
         logger = structlog.get_logger().bind(
@@ -461,7 +476,7 @@ class Bot:
         except Exception as e:
             logger.error("error", error=e)
 
-        await self._store_parties()
+        await self._save_storage()
 
     async def on_reaction_add(
         self,
