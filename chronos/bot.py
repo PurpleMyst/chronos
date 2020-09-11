@@ -443,6 +443,10 @@ class Bot:
     async def _hof_reqs(self, message: discord.Message) -> None:
         "Specify hall-of-fame requirements"
 
+        logger = structlog.get_logger().bind(
+            message=message.id, author=message.author.id
+        )
+
         parts = message.content.split(" ", 3)
 
         try:
@@ -463,6 +467,8 @@ class Bot:
             reaction_count=reaction_count,
             hof_channel=hof_channel,
         )
+        logger.info("hof.requirements.set", guild=guild)
+        await message.channel.send(f"<@{message.author.id}>: Set HOF requirements")
 
     async def _add_to_hof(self, message: discord.Message) -> None:
         author = message.author
