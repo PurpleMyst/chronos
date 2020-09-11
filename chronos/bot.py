@@ -22,9 +22,10 @@ class Bot:
     def __init__(self, client: discord.Client) -> None:
         self.client = client
 
-        self.storage_msg: t.Optional[discord.Message] = None
+        self._storage_msg: t.Optional[discord.Message] = None
+        self._loaded_storage = False
+
         self.parties: t.Dict[str, t.Dict[int, int]] = {}
-        self._loaded_parties = False
 
     @cached_property
     def _storage_channel(self) -> discord.TextChannel:
@@ -58,30 +59,30 @@ class Bot:
 
     async def _find_storage_message(self) -> bool:
         "Look for the storage message and return if it was found"
-        if self.storage_msg is not None:
+        if self._storage_msg is not None:
             return True
 
         # Search for the storage message in its channel's history
         async for msg in self._storage_channel.history():
             if msg.author == self.client.user:
-                self.storage_msg = msg
+                self._storage_msg = msg
                 return True
 
         # If we get here, we didn't find anything
         return False
 
-    async def load_parties(self) -> None:
+    async def _load_parties(self) -> None:
         logger = structlog.get_logger().bind()
 
         if await self._find_storage_message():
             logger.debug("load.found_storage", parties=self.parties)
-            assert self.storage_msg is not None
-            self.parties = pickle.loads(b64decode(self.storage_msg.content))
+            assert self._storage_msg is not None
+            self.parties = pickle.loads(b64decode(self._storage_msg.content))
             logger.info("load.parties", parties=self.parties)
         else:
             logger.debug("load.no_storage", parties=self.parties)
 
-    async def store_parties(self) -> None:
+    async def _store_parties(self) -> None:
         logger = structlog.get_logger().bind()
 
         content = b64encode(pickle.dumps(self.parties)).decode("ascii")
@@ -90,14 +91,14 @@ class Bot:
         # If there's no storage message to be found, create it
         if not (await self._find_storage_message()):
             logger.info("store.created_message", parties=self.parties)
-            self.storage_msg = await self._storage_channel.send(content)
+            self._storage_msg = await self._storage_channel.send(content)
             return
 
         logger.info("store.edited_message", parties=self.parties)
-        assert self.storage_msg is not None
-        await self.storage_msg.edit(content=content)
+        assert self._storage_msg is not None
+        await self._storage_msg.edit(content=content)
 
-    async def createparty(self, message: discord.Message) -> None:
+    async def _createparty(self, message: discord.Message) -> None:
         "Create a new party"
 
         logger = structlog.get_logger().bind(
@@ -121,7 +122,7 @@ class Bot:
             f"<@{message.author.id}>: Created party **{partyname}**"
         )
 
-    async def deleteparty(self, message: discord.Message) -> None:
+    async def _deleteparty(self, message: discord.Message) -> None:
         "Delete an existing party"
 
         logger = structlog.get_logger().bind(
@@ -146,7 +147,7 @@ class Bot:
                 f"<@{message.author.id}>: Party **{partyname}** does not exist"
             )
 
-    async def addtimezone(self, message: discord.Message) -> None:
+    async def _addtimezone(self, message: discord.Message) -> None:
         "Add yourself to a party, with your UTC offset"
 
         logger = structlog.get_logger().bind(
@@ -157,7 +158,7 @@ class Bot:
         if len(parts) != 3 and len(parts) != 4:
             await message.channel.send(
                 f"<@{message.author.id}>: "
-                "USAGE: !addtimezone PARTY_NAME UTC_OFFSET [MEMBER_IDENTIFIER]"
+                "USAGE: !_addtimezone PARTY_NAME UTC_OFFSET [MEMBER_IDENTIFIER]"
             )
             return
 
@@ -179,7 +180,7 @@ class Bot:
         except ValueError:
             await message.channel.send(
                 f"<@{message.author.id}>: "
-                "USAGE: !addtimezone PARTY_NAME UTC_OFFSET [MEMBER_IDENTIFIER]"
+                "USAGE: !_addtimezone PARTY_NAME UTC_OFFSET [MEMBER_IDENTIFIER]"
             )
             return
 
@@ -216,7 +217,7 @@ class Bot:
 
         raise LookupError(f"Could not find party for user with ID {user}")
 
-    async def do_convert(
+    async def _do_convert(
         self,
         channel: discord.TextChannel,
         party: t.Dict[int, int],
@@ -231,7 +232,7 @@ class Bot:
             )
         )
 
-    async def convert(self, message: discord.Message) -> None:
+    async def _convert(self, message: discord.Message) -> None:
         "Convert a given timestamp from your timezone to your party's timezones"
 
         logger = structlog.get_logger().bind(
@@ -243,7 +244,7 @@ class Bot:
         except ValueError:
             logger.debug("invalid_usage", content=message.content)
             await message.channel.send(
-                f"<@{message.author.id}>: USAGE: c!convert TIME"
+                f"<@{message.author.id}>: USAGE: c!_convert TIME"
             )
             return
 
@@ -277,9 +278,9 @@ class Bot:
 
         # Calculate the correct datetime for each party member and show it
         assert isinstance(message.channel, discord.TextChannel)
-        await self.do_convert(message.channel, party, dt)
+        await self._do_convert(message.channel, party, dt)
 
-    async def convert_as(self, message: discord.Message) -> None:
+    async def _convert_as(self, message: discord.Message) -> None:
         "Convert a given timestamp from someone's timezone to their party's timezones"
 
         logger = structlog.get_logger().bind(
@@ -292,7 +293,7 @@ class Bot:
         except ValueError:
             logger.debug("invalid_usage", content=message.content)
             await message.channel.send(
-                f"<@{message.author.id}>: USAGE: c!convert-as MEMBER_IDENTIFIER TIME"
+                f"<@{message.author.id}>: USAGE: c!_convert-as MEMBER_IDENTIFIER TIME"
             )
             return
 
@@ -325,9 +326,9 @@ class Bot:
 
         # Calculate the correct datetime for each party member and show it
         assert isinstance(message.channel, discord.TextChannel)
-        await self.do_convert(message.channel, party, dt)
+        await self._do_convert(message.channel, party, dt)
 
-    async def list_parties(self, message: discord.Message) -> None:
+    async def _list_parties(self, message: discord.Message) -> None:
         "List the known parties"
 
         embed = discord.Embed(
@@ -348,7 +349,7 @@ class Bot:
 
         await message.channel.send(f"<@{message.author.id}>", embed=embed)
 
-    async def show_help(self, message: discord.Message) -> None:
+    async def _show_help(self, message: discord.Message) -> None:
         "Show the installed commands"
 
         embed = discord.Embed(
@@ -362,7 +363,7 @@ class Bot:
 
         await message.channel.send(f"<@{message.author.id}>", embed=embed)
 
-    async def manual_hof(self, message: discord.Message) -> None:
+    async def _manual_hof(self, message: discord.Message) -> None:
         "Manually add a message to the HOF"
 
         parts = message.content.split()
@@ -388,12 +389,12 @@ class Bot:
             )
             return
 
-        await self.add_to_hof(message)
+        await self._add_to_hof(message)
         await message.channel.send(
             f"<@{message.author.id}>: Added message to the Hall of Fame"
         )
 
-    async def add_to_hof(self, message: discord.Message) -> None:
+    async def _add_to_hof(self, message: discord.Message) -> None:
         author = message.author
 
         logger = structlog.get_logger().bind(
@@ -422,14 +423,14 @@ class Bot:
         await hof_channel.send(embed=embed)
 
     COMMANDS = {
-        "create-party": createparty,
-        "delete-party": deleteparty,
-        "parties": list_parties,
-        "add-timezone": addtimezone,
-        "hof": manual_hof,
-        "convert": convert,
-        "convert-as": convert_as,
-        "help": show_help,
+        "create-party": _createparty,
+        "delete-party": _deleteparty,
+        "parties": _list_parties,
+        "add-timezone": _addtimezone,
+        "hof": _manual_hof,
+        "convert": _convert,
+        "convert-as": _convert_as,
+        "help": _show_help,
     }
 
     async def on_message(self, message: discord.Message) -> None:
@@ -439,9 +440,9 @@ class Bot:
         if not message.content.startswith(COMMAND_PREFIX):
             return
 
-        if not self._loaded_parties:
-            await self.load_parties()
-            self._loaded_parties = True
+        if not self._loaded_storage:
+            await self._load_parties()
+            self._loaded_storage = True
 
         logger = structlog.get_logger().bind(
             member_id=message.author.id, member_name=message.author.name
@@ -460,7 +461,7 @@ class Bot:
         except Exception as e:
             logger.error("error", error=e)
 
-        await self.store_parties()
+        await self._store_parties()
 
     async def on_reaction_add(
         self,
@@ -477,4 +478,4 @@ class Bot:
 
         logger.info("hof.reaction_reached")
 
-        await self.add_to_hof(reaction.message)
+        await self._add_to_hof(reaction.message)
