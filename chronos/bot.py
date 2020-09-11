@@ -39,9 +39,7 @@ class Bot:
         )
         return by_id(int(os.environ["STORAGE_CHANNEL"]), guild.text_channels)
 
-    def _parse_identifier(
-        self, in_message: discord.Message, ident: str
-    ) -> int:
+    def _parse_identifier(self, in_message: discord.Message, ident: str) -> int:
         "Convert an identifier (a name or an ID string) to an ID"
 
         # Try to parse the given identifier as a numeric ID
@@ -53,8 +51,7 @@ class Bot:
         # Try to match it to someone's display name in the current guild
         if in_message.guild is not None:
             members = {
-                member.display_name: member.id
-                for member in in_message.guild.members
+                member.display_name: member.id for member in in_message.guild.members
             }
             member_id, _score, _key = fuzzy_find(ident, members)
             return t.cast(int, member_id)
@@ -126,9 +123,7 @@ class Bot:
             return
 
         self._storage.parties[partyname] = {}
-        logger.info(
-            "party.created", party=partyname, parties=self._storage.parties
-        )
+        logger.info("party.created", party=partyname, parties=self._storage.parties)
         await message.channel.send(
             f"<@{message.author.id}>: Created party **{partyname}**"
         )
@@ -372,9 +367,7 @@ class Bot:
         )
 
         for command, func in self.COMMANDS.items():
-            embed.add_field(
-                name=f"!{command}", value=func.__doc__ or "No help given."
-            )
+            embed.add_field(name=f"!{command}", value=func.__doc__ or "No help given.")
 
         await message.channel.send(f"<@{message.author.id}>", embed=embed)
 
@@ -399,9 +392,7 @@ class Bot:
         try:
             message = await message.channel.fetch_message(message_id)
         except discord.NotFound:
-            await message.channel.send(
-                f"<@{message.author.id}>: Message not found."
-            )
+            await message.channel.send(f"<@{message.author.id}>: Message not found.")
             return
 
         await self._add_to_hof(message)
