@@ -64,15 +64,6 @@ class Bot:
                 member.id: member.display_name for member in in_message.guild.members
             }
             _key, _score, member_id = fuzzy_find(ident, members)
-            structlog.get_logger().debug(
-                "identifier.parsed_to",
-                members=members,
-                member_id=member_id,
-                score=_score,
-                member_display_name=_key,
-                guild=in_message.guild,
-                ident=ident,
-            )
             return t.cast(int, member_id)
 
         # If none of the checks succeeded, this identifier is (probably) invalid
@@ -513,12 +504,6 @@ class Bot:
 
         await hof_channel.send(embed=embed)
 
-    async def _test_parse_identifier(self, message: discord.Message) -> None:
-        ident = message.content.split(" ", 1)[1]
-        await message.author.send(
-            content=f"Parsed to: `{self._parse_identifier(message, ident)}`"
-        )
-
     COMMANDS = {
         "create-party": _createparty,
         "delete-party": _deleteparty,
@@ -529,7 +514,6 @@ class Bot:
         "convert-as": _convert_as,
         "help": _show_help,
         "hof-requirements": _hof_reqs,
-        "ident": _test_parse_identifier,
     }
 
     async def on_message(self, message: discord.Message) -> None:
