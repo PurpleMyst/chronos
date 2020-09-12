@@ -50,5 +50,7 @@ Parties are the main functionality of the bot, and their usage is as follows:
 
 ### Hall of Fame
 
-Any messages that gets more than 4 reacts with the `nat20` emote will be added to the `HOF_CHANNEL`.
+To configure the hall of fame, you must use `c!configure-hof` with the reaction emoji's name, the reaction count and the hall-of-fame channel ID.
+
+Any messages that gets more than N reacts with the chosen emote will be added to the HoF channel.
 You can also use `c!hof` with a message ID to manually add a message to the hall of fame.
