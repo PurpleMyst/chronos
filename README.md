@@ -14,14 +14,13 @@ $ python3 -m pip install --user -r requirements.txt
 $ python3 -m pip install --user -e .
 ```
 
-Now, you must create a bot application, [here's an guide from discord.js](https://discordjs.guide/preparations/setting-up-a-bot-application.html).
+Now, you must create a bot application in the Discord developer portal,
+[here's an guide from discord.js](https://discordjs.guide/preparations/setting-up-a-bot-application.html).
 
 Then, you must set up your environment with the following environment variables:
 
 - `DISCORD_TOKEN`: Your discord bot token.
-- `STORAGE_GUILD`: The id of the guild that contains the storage channel (see below for details)
-- `STORAGE_CHANNEL`: The id of the channel that will be used for storage (see below for details)
-- `HOF_CHANNEL`: The id of the channel where messages that are put into the HOF will be posted
+- `STORAGE_CHANNEL`: The ID of the channel that will be used for storage (see below for details)
 
 Now, you can just run the `chronos` python package and add your self-hosted bot to servers:
 
@@ -31,7 +30,7 @@ $ python3 -m chronos
 
 ### Already-Existing
 
-Create an issue with your server and I will consider adding the bot I already run to your sever :>
+Create a GitHub issue requesting the addition of the bot to your server and I will consider adding it.
 
 ## Functionality
 
@@ -54,3 +53,19 @@ To configure the hall of fame, you must use `c!configure-hof` with the reaction 
 
 Any messages that gets more than N reacts with the chosen emote will be added to the HoF channel.
 You can also use `c!hof` with a message ID to manually add a message to the hall of fame.
+
+## Storage
+
+Due to the usefulness of this bot being based on the data it can store, it needed some sort of storage container.  
+Due to the fact that I wanted to leverage existing storage and avoid paying if possible, I chose to implement the following:
+
+1. The bot's data is kept as a `pydantic` model: this ensures data integrity,
+   by validating and converting the data to and from any format I chose to marshal it in.
+2. The data is converted to and from a base64-encoded pickle payload: this ensures I can marshal
+   any value Python supports and have it in a known, safe, ASCII subset.
+3. The data is kept in a Discord message in a designated storage channel: this ensures that the data will _always_
+   be available and in a place that does not cost extra.
+
+All in all, this solution does, at least at the moment, everything I need it to do.  
+In the future, I may have to expand this solution to support splitting the data over multiple messages,
+as a single message has a size limit.
