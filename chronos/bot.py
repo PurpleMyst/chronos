@@ -3,7 +3,6 @@ from datetime import datetime
 import pickle
 import os
 from base64 import b64encode, b64decode
-from functools import cached_property
 
 import discord
 import structlog  # type: ignore
@@ -11,7 +10,7 @@ import HumanTime as human_time  # type: ignore
 import pydantic
 from fuzzywuzzy.process import extractOne as fuzzy_find  # type: ignore
 
-from .utils import utc, by_id
+from .utils import utc
 
 
 COMMAND_PREFIX = "c!"
