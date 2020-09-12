@@ -42,12 +42,10 @@ class Bot:
 
         self._storage = Storage()
 
-    @cached_property
-    def _storage_channel(self) -> discord.TextChannel:
-        guild: discord.Guild = by_id(
-            int(os.environ["STORAGE_GUILD"]), self.client.guilds
-        )
-        return by_id(int(os.environ["STORAGE_CHANNEL"]), guild.text_channels)
+    async def _storage_channel(self) -> discord.TextChannel:
+        chan = await self.client.fetch_channel(int(os.environ["STORAGE_CHANNEL"]))
+        assert isinstance(chan, discord.TextChannel)
+        return chan
 
     def _parse_identifier(self, in_message: discord.Message, ident: str) -> int:
         "Convert an identifier (a name or an ID string) to an ID"
@@ -75,7 +73,7 @@ class Bot:
             return True
 
         # Search for the storage message in its channel's history
-        async for msg in self._storage_channel.history():
+        async for msg in (await self._storage_channel()).history():
             if msg.author == self.client.user:
                 self._storage_msg = msg
                 return True
@@ -112,7 +110,7 @@ class Bot:
         # If there's no storage message to be found, create it
         if not (await self._find_storage_message()):
             logger.info("store.created_message")
-            self._storage_msg = await self._storage_channel.send(content)
+            self._storage_msg = await (await self._storage_channel()).send(content)
             return
 
         logger.info("store.edited_message")
