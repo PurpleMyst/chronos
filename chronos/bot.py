@@ -32,9 +32,15 @@ class Storage(pydantic.BaseModel):
     guilds: t.Dict[int, GuildStorage] = {}
 
 
+class Settings(pydantic.BaseSettings):
+    discord_token: str
+    storage_channel: int
+
+
 class Bot:
-    def __init__(self, client: discord.Client) -> None:
+    def __init__(self, settings: Settings, client: discord.Client) -> None:
         self.client = client
+        self.settings = settings
 
         self._storage_msg: t.Optional[discord.Message] = None
         self._loaded_storage = False
@@ -42,7 +48,7 @@ class Bot:
         self._storage = Storage()
 
     async def _storage_channel(self) -> discord.TextChannel:
-        chan = await self.client.fetch_channel(int(os.environ["STORAGE_CHANNEL"]))
+        chan = await self.client.fetch_channel(self.settings.storage_channel)
         assert isinstance(chan, discord.TextChannel)
         return chan
 

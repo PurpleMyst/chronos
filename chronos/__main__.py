@@ -4,8 +4,9 @@ import os
 import discord
 import structlog  # type: ignore
 
-from .bot import Bot
+from .bot import Bot, Settings
 
+settings = Settings()
 client = discord.Client()
 bot = Bot(client)
 
@@ -34,4 +35,4 @@ async def on_reaction_add(
     await bot.on_reaction_add(reaction, user)
 
 
-client.run(os.environ["DISCORD_TOKEN"])
+client.run(settings.discord_token)
