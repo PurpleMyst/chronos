@@ -562,7 +562,7 @@ class Bot:
         )
         hof = guild.hall_of_fame
 
-        logger.trace(
+        logger.debug(
             "reaction.add", hof=hof, emoji=reaction.emoji, count=reaction.count
         )
 
