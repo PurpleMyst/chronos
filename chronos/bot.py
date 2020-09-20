@@ -562,6 +562,10 @@ class Bot:
         )
         hof = guild.hall_of_fame
 
+        logger.trace(
+            "reaction.add", hof=hof, emoji=reaction.emoji, count=reaction.count
+        )
+
         if (
             hof is None
             or getattr(reaction.emoji, "name", reaction.emoji) != hof.reaction_emoji
