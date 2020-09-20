@@ -8,7 +8,7 @@ from .bot import Bot, Settings
 
 settings = Settings()
 client = discord.Client()
-bot = Bot(client)
+bot = Bot(settings, client)
 
 
 structlog.configure(
