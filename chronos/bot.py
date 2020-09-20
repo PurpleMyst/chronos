@@ -560,7 +560,12 @@ class Bot:
         guild = self._storage.guilds.setdefault(
             reaction.message.guild.id, GuildStorage()
         )
-        logger.debug("hof.guild", guild=guild)
+        logger.debug(
+            "hof.guild",
+            known=tuple(self._storage.guilds.keys()),
+            guild_id=reaction.message.guild.id,
+            guild=guild,
+        )
         hof = guild.hall_of_fame
 
         logger.debug(
