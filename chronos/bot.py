@@ -556,21 +556,15 @@ class Bot:
     ) -> None:
         logger = structlog.get_logger().bind(message_id=reaction.message.id)
 
+        if not self._loaded_storage:
+            await self._load_storage()
+            self._loaded_storage = True
+
         assert reaction.message.guild is not None
         guild = self._storage.guilds.setdefault(
             reaction.message.guild.id, GuildStorage()
         )
-        logger.debug(
-            "hof.guild",
-            known=tuple(self._storage.guilds.keys()),
-            guild_id=reaction.message.guild.id,
-            guild=guild,
-        )
         hof = guild.hall_of_fame
-
-        logger.debug(
-            "hof.reaction.add", hof=hof, emoji=reaction.emoji, count=reaction.count
-        )
 
         if (
             hof is None
