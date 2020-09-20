@@ -560,10 +560,11 @@ class Bot:
         guild = self._storage.guilds.setdefault(
             reaction.message.guild.id, GuildStorage()
         )
+        logger.debug("hof.guild", guild=guild)
         hof = guild.hall_of_fame
 
         logger.debug(
-            "reaction.add", hof=hof, emoji=reaction.emoji, count=reaction.count
+            "hof.reaction.add", hof=hof, emoji=reaction.emoji, count=reaction.count
         )
 
         if (
